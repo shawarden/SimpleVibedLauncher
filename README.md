@@ -22,7 +22,14 @@ as the screen allows, with short rows and the whole block centred (it scrolls if
 exactly 8, slowly and at random.
 **Screensaver:** starts after the idle time (2 minutes by default). Same idea as the background but with a limit of 64 by
 default. The clock moves around the screen and never settles; the colour steps by 8 on every bounce off an edge.
-Any key wakes it.
+**Going into the screensaver (from the home screen):** every icon and favourite is released and falls under the Gravity
+strength setting (low/medium/high), each with its own small random sideways drift and a short random delay. Pieces that
+reach the bottom keep going and leave the screen. While they fall the background morphs to the screensaver colours and
+the clock grows to its screensaver size and is released too, but it bounces off the edges. Once everything else has
+gone, the clock carries on bouncing as normal (colour steps on each bounce).
+**Leaving it:** any key wakes it (the key is not passed on). Everything springs back up to its place with a small
+overshoot, the clock shrinks and springs home, and the background morphs back to the home colour (about 2 seconds).
+The system daydream (if your TV lets you choose one) uses the plain screensaver with no fall.
 
 ## Build
 

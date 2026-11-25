@@ -52,6 +52,33 @@ final class BounceSim {
         }
     }
 
+    /**
+     * Let the box go from rest at (x0, y0) under gravity (strength set by level), with a random sideways
+     * speed. This is the clock being released from its place on the home screen.
+     */
+    void releaseAt(float fieldW, float fieldH, float boxW, float boxH, float x0, float y0, int level) {
+        int lv = Math.max(0, Math.min(2, level));
+        this.fieldW = fieldW;
+        this.fieldH = fieldH;
+        g = Config.GRAVITY * Config.GRAVITY_SCALE[lv] * fieldH;
+        setBox(boxW, boxH);
+        x = Math.max(0f, Math.min(x0, maxX));
+        y = Math.max(0f, Math.min(y0, maxY));
+        vx = sign() * lerp(Config.VX_MIN, Config.VX_MAX, rnd.nextFloat()) * fieldW;
+        vy = 0f;
+        energy = -g * y;      // at rest at y: it will fall and rise back to this height each time
+    }
+
+    /** Stop using gravity: keep the direction of travel but move at a constant speed (set by level). */
+    void toCleanBounce(int level) {
+        int lv = Math.max(0, Math.min(2, level));
+        float k = Config.SPEED_SCALE[lv];
+        g = 0f;
+        energy = 0f;
+        vx = (vx < 0f ? -1f : 1f) * lerp(Config.VX_MIN, Config.VX_MAX, rnd.nextFloat()) * fieldW * k;
+        vy = (vy < 0f ? -1f : 1f) * lerp(Config.VY_CLEAN_MIN, Config.VY_CLEAN_MAX, rnd.nextFloat()) * fieldH * k;
+    }
+
     /** The box changed size (the time text changed width). */
     void setBox(float boxW, float boxH) {
         maxX = Math.max(0f, fieldW - boxW);

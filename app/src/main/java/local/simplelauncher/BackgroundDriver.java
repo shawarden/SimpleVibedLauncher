@@ -40,6 +40,11 @@ final class BackgroundDriver {
         this.view = view;
     }
 
+    /** The colour the background has right now (the screensaver starts from it and returns to it). */
+    static int currentColor() {
+        return drift == null ? 0xFF000000 : drift.color();
+    }
+
     void start() {
         if (running) return;
         running = true;

@@ -5,6 +5,11 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,6 +19,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -40,6 +46,8 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
     private ScreensaverView saver;
     private TextView timeView, dayView, emptyView;
     private GlyphView appsButton;
+    private LinearLayout clock;
+    private final List<View> iconViews = new ArrayList<>();
     private ScrollView scroll;
     private LinearLayout column;
 
@@ -86,10 +94,16 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
         root.addView(bar, barParams);
 
         // The clock is display only: not focusable and not clickable, so selecting it does nothing.
-        LinearLayout clock = new LinearLayout(this);
+        clock = new LinearLayout(this);
         clock.setOrientation(LinearLayout.VERTICAL);
         timeView = label(h * 0.055f, 0xFFEDEDED, Gravity.START);
         dayView = label(h * 0.026f, 0xFFA8A8A8, Gravity.START);
+        // Light type with no extra font padding: the screensaver draws the clock itself and has to match.
+        Typeface light = Typeface.create("sans-serif-light", Typeface.NORMAL);
+        for (TextView t : new TextView[] { timeView, dayView }) {
+            t.setTypeface(light);
+            t.setIncludeFontPadding(false);
+        }
         clock.addView(timeView);
         clock.addView(dayView);
         bar.addView(clock, new FrameLayout.LayoutParams(
@@ -138,6 +152,7 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
 
         // ---- Screensaver, on top of everything and hidden until the idle timer fires.
         saver = new ScreensaverView(this);
+        saver.setListener(this::hideSaver);
         saver.setVisibility(View.GONE);
         root.addView(saver, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -162,6 +177,7 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
         if (parent.getChildCount() > 0) lp.leftMargin = gap;
         parent.addView(g, lp);
+        iconViews.add(g);
         return g;
     }
 
@@ -233,10 +249,81 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
         if (ms > 0) handler.postDelayed(idle, ms);   // 0 = screensaver switched off
     }
 
+    /**
+     * Start the screensaver from the home screen: take a picture of every icon and tile, put the overlay
+     * over the screen showing exactly the same thing, and let it release them. The real views stay where
+     * they are underneath (hiding the focused one would lose the focus), so the return lands back on them.
+     */
     private void showSaver() {
+        int homeColor = BackgroundDriver.currentColor();
         background.stop();
+        root.setBackgroundColor(homeColor);           // exactly what the overlay starts from and returns to
+
+        List<Bitmap> pictures = new ArrayList<>();
+        List<float[]> where = new ArrayList<>();      // x, y, scale
+        for (View v : iconViews) addPiece(pictures, where, v, 0f);
+        float scrollTop = scroll.getTop();
+        float scrollBottom = scroll.getBottom();
+        for (TileView t : tiles) {
+            float[] p = positionInRoot(t);
+            if (p[1] + t.getHeight() <= scrollTop || p[1] >= scrollBottom) continue;   // scrolled out of view
+            addPiece(pictures, where, t, tileH * 0.08f);
+        }
+        if (emptyView.getVisibility() == View.VISIBLE) addPiece(pictures, where, emptyView, 0f);
+
+        int n = pictures.size();
+        float[] xs = new float[n], ys = new float[n], scales = new float[n];
+        for (int i = 0; i < n; i++) {
+            xs[i] = where.get(i)[0];
+            ys[i] = where.get(i)[1];
+            scales[i] = where.get(i)[2];
+        }
+        float[] clockPos = positionInRoot(clock);
         saver.setVisibility(View.VISIBLE);
-        saver.start();
+        saver.startFromHome(pictures.toArray(new Bitmap[0]), xs, ys, scales, homeColor,
+                clockPos[0], clockPos[1], timeView.getTextSize(), dayView.getTextSize());
+    }
+
+    /** Adds a picture of the view and where it sits; ignores views that are hidden or have no size. */
+    private void addPiece(List<Bitmap> pictures, List<float[]> where, View v, float cornerRadius) {
+        int w = v.getWidth(), h = v.getHeight();
+        if (v.getVisibility() != View.VISIBLE || w <= 0 || h <= 0) return;
+        Bitmap b;
+        try {
+            b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        } catch (OutOfMemoryError e) {
+            return;                                    // that piece simply stays out of the show
+        }
+        Canvas c = new Canvas(b);
+        if (cornerRadius > 0f) {
+            Path clip = new Path();
+            clip.addRoundRect(new RectF(0, 0, w, h), cornerRadius, cornerRadius, Path.Direction.CW);
+            c.clipPath(clip);
+        }
+        v.draw(c);                                     // draws the view itself, without its scale
+        float[] p = positionInRoot(v);
+        pictures.add(b);
+        where.add(new float[] { p[0], p[1], v.getScaleX() });
+    }
+
+    /**
+     * Top-left of a view in the root's coordinates, from the layout positions, translations and scrolling of
+     * the views above it. (getLocationInWindow would include the focus zoom, which is drawn separately.)
+     */
+    private float[] positionInRoot(View v) {
+        float x = 0f, y = 0f;
+        View cur = v;
+        while (cur != root) {
+            x += cur.getLeft() + cur.getTranslationX();
+            y += cur.getTop() + cur.getTranslationY();
+            ViewParent parent = cur.getParent();
+            if (!(parent instanceof View)) break;
+            View pv = (View) parent;
+            x -= pv.getScrollX();
+            y -= pv.getScrollY();
+            cur = pv;
+        }
+        return new float[] { x, y };
     }
 
     private void hideSaver() {
@@ -248,8 +335,9 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
 
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
         if (saver.getVisibility() == View.VISIBLE) {
-            // The first key press only wakes the screen; it isn't passed on to the buttons underneath.
-            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) hideSaver();
+            // The first key press only wakes the screen (everything springs back); it isn't passed on to the
+            // buttons underneath, and neither is anything pressed while they are coming back.
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) saver.wake();
             return true;
         }
         armIdle();

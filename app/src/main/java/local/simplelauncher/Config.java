@@ -24,8 +24,8 @@ final class Config {
      * Starting "energy" of the clock in screen-heights^2 per second^2. It never changes afterwards, so the
      * clock always bounces back up to the same height. Anything above 0 reaches the top of the screen.
      */
-    static final float ENERGY_MIN = 0.01f;
-    static final float ENERGY_MAX = 0.04f;
+    static final float ENERGY_MIN = 0.00f;
+    static final float ENERGY_MAX = 0.00f;
     /** Sideways speed, in screen widths per second. */
     static final float VX_MIN = 0.06f;
     static final float VX_MAX = 0.12f;
@@ -39,7 +39,24 @@ final class Config {
     static final float VY_CLEAN_MIN = 0.10f;
     static final float VY_CLEAN_MAX = 0.16f;
 
+    // ---- Home screen <-> screensaver transition
+    /** Seconds for the background to morph to the screensaver colours while the pieces fall. */
+    static final float FALL_FADE_S = 3.0f;
+    /** Seconds for the clock to grow from its home size to its screensaver size. */
+    static final float GROW_S = 2.5f;
+    /** Seconds for the background to morph back, and the shortest time the return takes. */
+    static final float RETURN_S = 1.5f;
+    /** Everything is snapped to its home position by this time after waking. */
+    static final float RETURN_MAX_S = 2.0f;
+    /** Seconds for the clock to shrink back to its home size. */
+    static final float RETURN_SHRINK_S = 0.9f;
+    /** Random sideways speed of the falling pieces, in screen widths per second. */
+    static final float DRIFT_MIN = 0.02f;
+    static final float DRIFT_MAX = 0.12f;
+    /** Each piece lets go after a random delay of up to this many seconds. */
+    static final float RELEASE_DELAY_MAX_S = 0.5f;
+
     // ---- Layout
     static final int FAV_COLUMNS = 4;
-    static final int DRAWER_COLUMNS = 6;
+    static final int DRAWER_COLUMNS = 5;
 }
