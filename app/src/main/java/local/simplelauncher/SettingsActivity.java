@@ -1,6 +1,7 @@
 package local.simplelauncher;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
@@ -25,12 +26,13 @@ public class SettingsActivity extends Activity {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Tuning.ensureLoaded(this);
         DisplayMetrics dm = getResources().getDisplayMetrics();
         int w = dm.widthPixels;
         h = dm.heightPixels;
         int margin = (int) (w * 0.05f);
-        int gap = (int) (h * 0.017f);
-        rowH = (int) (h * 0.08f);
+        int gap = (int) (h * 0.014f);
+        rowH = (int) (h * 0.07f);
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(0xFF000000);
@@ -87,6 +89,11 @@ public class SettingsActivity extends Activity {
                 new String[] { "16  (very dim)", "32  (default)", "48", "64" },
                 new long[] { 16, 32, 48, 64 });
 
+        addLinkRow(column, gap, "Advanced settings (sliders)", "Open  >",
+                () -> startActivity(new Intent(this, TuningActivity.class)));
+        addLinkRow(column, gap, "Button mapper", "Open  >",
+                () -> startActivity(new Intent(this, ButtonMapActivity.class)));
+
         setContentView(root);
         first.requestFocus();
     }
@@ -99,9 +106,21 @@ public class SettingsActivity extends Activity {
         return t;
     }
 
-    /** One row: a name on the left, the current choice on the right. */
-    private View addRow(LinearLayout parent, int gap, String name, final String key, long fallback,
-                        final boolean restartBackground, final String[] labels, final long[] values) {
+    /** A row that opens another screen when OK is pressed. */
+    private void addLinkRow(LinearLayout parent, int gap, String name, String value, Runnable open) {
+        LinearLayout row = makeRow(name);
+        TextView valueView = text(h * 0.032f, 0xFFFFD54F);
+        valueView.setText(value);
+        row.addView(valueView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        row.setOnClickListener(v -> open.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, rowH);
+        lp.bottomMargin = gap;
+        parent.addView(row, lp);
+    }
+
+    /** The shared look of a settings row: rounded, with a white outline when it has the focus; holds the name. */
+    private LinearLayout makeRow(String name) {
         final LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -125,6 +144,13 @@ public class SettingsActivity extends Activity {
         TextView nameView = text(h * 0.032f, 0xFFEDEDED);
         nameView.setText(name);
         row.addView(nameView, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        return row;
+    }
+
+    /** One row: a name on the left, the current choice on the right. */
+    private View addRow(LinearLayout parent, int gap, String name, final String key, long fallback,
+                        final boolean restartBackground, final String[] labels, final long[] values) {
+        final LinearLayout row = makeRow(name);
 
         final TextView valueView = text(h * 0.032f, 0xFFFFD54F);
         row.addView(valueView, new LinearLayout.LayoutParams(

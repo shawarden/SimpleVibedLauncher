@@ -64,6 +64,34 @@ final class Prefs {
         sp(c).edit().putLong(key, value).apply();
     }
 
+    static boolean has(Context c, String key) {
+        return sp(c).contains(key);
+    }
+
+    static float getFloat(Context c, String key, float fallback) {
+        try {
+            return sp(c).getFloat(key, fallback);
+        } catch (ClassCastException e) {
+            return fallback;
+        }
+    }
+
+    static void setFloat(Context c, String key, float value) {
+        sp(c).edit().putFloat(key, value).apply();
+    }
+
+    static void remove(Context c, String key) {
+        sp(c).edit().remove(key).apply();
+    }
+
+    static String getString(Context c, String key, String fallback) {
+        return sp(c).getString(key, fallback);
+    }
+
+    static void setString(Context c, String key, String value) {
+        sp(c).edit().putString(key, value).apply();
+    }
+
     static boolean askedLocation(Context c) {
         return sp(c).getBoolean(ASKED_LOCATION, false);
     }

@@ -45,6 +45,7 @@ public class DrawerActivity extends Activity implements TileGrid.Callbacks {
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Tuning.ensureLoaded(this);
         favourites = new Favourites(this);
 
         DisplayMetrics dm = getResources().getDisplayMetrics();

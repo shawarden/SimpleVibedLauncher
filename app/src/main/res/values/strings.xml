@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Simple Launcher</string>
+    <string name="app_name">SimpleVibedLauncher</string>
+    <string name="key_service_label">SimpleVibedLauncher buttons</string>
+    <string name="key_service_description">Lets SimpleVibedLauncher notice presses of the remote\'s buttons in any app, so that buttons set in its Button mapper can do something else. It does not read the screen.</string>
 </resources>

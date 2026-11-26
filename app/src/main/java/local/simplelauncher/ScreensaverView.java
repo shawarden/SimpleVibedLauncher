@@ -62,6 +62,7 @@ final class ScreensaverView extends View {
 
     ScreensaverView(Context ctx) {
         super(ctx);
+        Tuning.ensureLoaded(ctx);
         Typeface light = Typeface.create("sans-serif-light", Typeface.NORMAL);
         timePaint.setTypeface(light);
         dayPaint.setTypeface(light);

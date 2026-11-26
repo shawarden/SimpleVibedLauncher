@@ -77,22 +77,32 @@ final class GlyphView extends View {
         }
     }
 
-    /** An arrow going into a box. */
+    /** An HDMI socket seen from the front: the wide shape with two cut bottom corners, and its two rows of pins. */
     private void drawInputs(Canvas canvas, float s, float cx, float cy) {
-        stroke.setStrokeWidth(s * 0.07f);
+        float[] p = {
+                -0.38f, -0.20f,  0.38f, -0.20f,  0.38f, 0.04f,
+                0.28f, 0.20f,  -0.28f, 0.20f,  -0.38f, 0.04f };
         path.rewind();
-        // the box, open on the left
-        path.moveTo(cx, cy - 0.28f * s);
-        path.lineTo(cx + 0.28f * s, cy - 0.28f * s);
-        path.lineTo(cx + 0.28f * s, cy + 0.28f * s);
-        path.lineTo(cx, cy + 0.28f * s);
-        // the arrow
-        path.moveTo(cx - 0.31f * s, cy);
-        path.lineTo(cx + 0.12f * s, cy);
-        path.moveTo(cx - 0.02f * s, cy - 0.13f * s);
-        path.lineTo(cx + 0.12f * s, cy);
-        path.lineTo(cx - 0.02f * s, cy + 0.13f * s);
+        for (int i = 0; i < p.length; i += 2) {
+            float x = cx + p[i] * s;
+            float y = cy + p[i + 1] * s;
+            if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+        }
+        path.close();
+        stroke.setStrokeWidth(s * 0.06f);
         canvas.drawPath(path, stroke);
+
+        // the pins: ten along the top, nine in between along the bottom
+        stroke.setStrokeWidth(s * 0.03f);
+        float pitch = 0.5f / 9f;
+        for (int k = 0; k < 10; k++) {
+            float x = cx + (-0.25f + k * pitch) * s;
+            canvas.drawLine(x, cy - 0.12f * s, x, cy - 0.05f * s, stroke);
+        }
+        for (int k = 0; k < 9; k++) {
+            float x = cx + (-0.25f + (k + 0.5f) * pitch) * s;
+            canvas.drawLine(x, cy + 0.04f * s, x, cy + 0.11f * s, stroke);
+        }
     }
 
     /** A house with a door. */

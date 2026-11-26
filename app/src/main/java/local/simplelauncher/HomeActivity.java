@@ -52,6 +52,7 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
     private LinearLayout column;
 
     private int tileW, tileH, gap;
+    private int colsAtCreate;      // the Favourites per row setting this screen was laid out with
     private List<TileView> tiles = new ArrayList<>();
     private int focusIndex = 0;
     private Dialog dialog;
@@ -61,10 +62,15 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
     private boolean focusFirst = true;
     private int generation;
     private String shownTime = "", shownDay = "";
+    /** Something a button asked this screen to do once it is in front: "inputs", "wifi" or "saver". */
+    private String pendingCommand;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Tuning.ensureLoaded(this);
+        colsAtCreate = Config.FAV_COLUMNS;
         favourites = new Favourites(this);
+        if (savedInstanceState == null) pendingCommand = getIntent().getStringExtra(ActionRunner.COMMAND);
 
         DisplayMetrics dm = getResources().getDisplayMetrics();
         int w = dm.widthPixels;
@@ -185,11 +191,16 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
 
     @Override protected void onResume() {
         super.onResume();
+        if (Config.FAV_COLUMNS != colsAtCreate) {      // changed in Advanced settings: lay out again
+            recreate();
+            return;
+        }
         resumed = true;
         background.start();
         updateClock();
         reload();
         armIdle();
+        schedulePendingCommand();
         if (pendingWifiDialog) {   // the Location permission question has just been answered
             pendingWifiDialog = false;
             showWifi();
@@ -215,6 +226,24 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
         focusIndex = 0;
         focusFirst = true;
         if (!tiles.isEmpty()) tiles.get(0).requestFocus(); else appsButton.requestFocus();
+        pendingCommand = intent.getStringExtra(ActionRunner.COMMAND);
+        if (resumed) schedulePendingCommand();       // otherwise onResume does it
+    }
+
+    /** Runs what a remote button asked for, a moment after the screen is in front so it is laid out. */
+    private void schedulePendingCommand() {
+        final String command = pendingCommand;
+        pendingCommand = null;
+        if (command == null) return;
+        handler.postDelayed(() -> {
+            if (!resumed) return;
+            switch (command) {
+                case "inputs": showInputs(); break;
+                case "wifi":   onWifiClicked(); break;
+                case "saver":  showSaver(); break;
+                default:       break;
+            }
+        }, 350);
     }
 
     /** Back does nothing on a home screen. */
@@ -255,6 +284,8 @@ public class HomeActivity extends Activity implements TileGrid.Callbacks {
      * they are underneath (hiding the focused one would lose the focus), so the return lands back on them.
      */
     private void showSaver() {
+        if (saver.getVisibility() == View.VISIBLE) return;
+        if (dialog != null && dialog.isShowing()) dialog.dismiss();
         int homeColor = BackgroundDriver.currentColor();
         background.stop();
         root.setBackgroundColor(homeColor);           // exactly what the overlay starts from and returns to

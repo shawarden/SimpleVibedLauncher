@@ -15,6 +15,7 @@ import java.util.Random;
 final class BackgroundDriver {
     private static ColorDrift drift;
     private static int driftMax;
+    private static int driftStep;
     private static long last;
 
     private final View view;
@@ -48,10 +49,12 @@ final class BackgroundDriver {
     void start() {
         if (running) return;
         running = true;
+        Tuning.ensureLoaded(view.getContext());
         int max = Prefs.bgMax(view.getContext());
-        if (drift == null || max != driftMax) {
+        if (drift == null || max != driftMax || Config.STEP != driftStep) {
             drift = new ColorDrift(max, Config.STEP, new Random());
             driftMax = max;
+            driftStep = Config.STEP;
         }
         last = SystemClock.uptimeMillis();
         handler.post(tick);
