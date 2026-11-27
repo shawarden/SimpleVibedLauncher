@@ -42,6 +42,7 @@ final class ScreensaverView extends View {
     // settings, read when the screensaver starts
     private boolean showDate = true;
     private boolean gravity = true;
+    private boolean breathe;
     private int level;
     private int saverMax = Config.SAVER_MAX;
 
@@ -128,6 +129,7 @@ final class ScreensaverView extends View {
         saverMax = Prefs.saverMax(c);
         showDate = Prefs.saverShowsDate(c);
         gravity = Prefs.gravityMotion(c);
+        breathe = Prefs.breathe(c);
         level = Prefs.motionLevel(c);
     }
 
@@ -225,15 +227,15 @@ final class ScreensaverView extends View {
                 ph[i] = bitmaps[i].getHeight();
             }
             Debris debris = new Debris(pieceX.clone(), pieceY.clone(), pw, ph, rnd);
-            core = SaverCore.fromHome(rnd, saverMax, gravity, level, w, h, homeColor, debris,
+            core = SaverCore.fromHome(rnd, saverMax, gravity, breathe, level, w, h, homeColor, debris,
                     clockHomeX, clockHomeY, boxW, boxH);
         } else if (fromHome) {
             // nothing on the home screen to drop (no favourites and no icons laid out): just the clock
             Debris none = new Debris(new float[0], new float[0], new float[0], new float[0], rnd);
-            core = SaverCore.fromHome(rnd, saverMax, gravity, level, w, h, homeColor, none,
+            core = SaverCore.fromHome(rnd, saverMax, gravity, breathe, level, w, h, homeColor, none,
                     clockHomeX, clockHomeY, boxW, boxH);
         } else {
-            core = SaverCore.plain(rnd, saverMax, gravity, level, w, h, boxW, boxH);
+            core = SaverCore.plain(rnd, saverMax, gravity, breathe, level, w, h, boxW, boxH);
         }
     }
 

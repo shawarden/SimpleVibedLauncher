@@ -7,7 +7,9 @@ import java.util.Random;
  * <ol>
  * <li>FALL: the home screen's pieces are released and fall away under gravity, the background morphs to the
  *     screensaver colours, and the clock (released too, but it bounces) grows to its screensaver size.</li>
- * <li>SAVER: the clock bounces for ever (gravity or clean bounce), stepping the colour on each bounce.</li>
+ * <li>SAVER: the clock bounces for ever (gravity or clean bounce), stepping the colour on each bounce. In
+ *     gravity mode there is an alternative, "breathing": the background is black when the clock is at the
+ *     bottom and rises to a random colour as the clock rises; a new random colour is picked at each landing.</li>
  * <li>RETURN: after a wake-up, the pieces spring back to their places, the clock shrinks and springs home,
  *     and the background morphs back to the home colour.</li>
  * </ol>
@@ -20,6 +22,10 @@ final class SaverCore {
     private static final float SUB = 1f / 240f;    // physics step
 
     private final boolean gravityMode;
+    private final boolean breathe;                  // gravity mode only: the background follows the clock's height
+    private final int saverMax;
+    private final Random rnd;
+    private final int[] peak = new int[3];          // the colour the background reaches at the top, per channel
     private final int level;
     private final int homeColor;
     private final ColorDrift drift;
@@ -36,9 +42,14 @@ final class SaverCore {
     private Spring clockSpring;
     private float msCarry;
 
-    private SaverCore(Random rnd, int saverMax, boolean gravityMode, int level, float screenW, float screenH,
-                      int homeColor, Debris debris, float clockHomeX, float clockHomeY) {
+    private SaverCore(Random rnd, int saverMax, boolean gravityMode, boolean breathe, int level,
+                      float screenW, float screenH, int homeColor, Debris debris,
+                      float clockHomeX, float clockHomeY) {
         this.gravityMode = gravityMode;
+        this.breathe = breathe && gravityMode;      // there is no up and down arc without gravity
+        this.saverMax = saverMax;
+        this.rnd = rnd;
+        newPeaks();
         this.level = level;
         this.screenW = screenW;
         this.screenH = screenH;
@@ -49,18 +60,44 @@ final class SaverCore {
         this.drift = new ColorDrift(saverMax, Config.STEP, rnd);
         // The colour only steps on bounces once the transition is over.
         this.sim = new BounceSim(rnd, () -> {
-            if (phase == Phase.SAVER) drift.nudge(Config.SAVER_FADE_MS);
+            if (phase == Phase.SAVER && !this.breathe) drift.nudge(Config.SAVER_FADE_MS);
         });
+    }
+
+    /** Picks the colour reached at the top of the bounce: each channel anywhere from 0 to the brightness limit. */
+    private void newPeaks() {
+        for (int i = 0; i < 3; i++) peak[i] = rnd.nextInt(saverMax + 1);
+    }
+
+    /**
+     * The breathing colour: black with the clock on the bottom edge, the full peak colour at the top of the
+     * screen, in proportion to the clock's height in between.
+     */
+    private int breathColor() {
+        float maxY = sim.maxY();
+        float f = maxY <= 0f ? 1f : Math.max(0f, Math.min(1f, 1f - sim.y / maxY));
+        return 0xFF000000 | (Math.round(peak[0] * f) << 16) | (Math.round(peak[1] * f) << 8) | Math.round(peak[2] * f);
+    }
+
+    /** What the background is heading for while the transition runs, and the colour it has afterwards. */
+    private int saverBackground() {
+        return breathe ? breathColor() : drift.color();
     }
 
     /** The plain screensaver: a bouncing clock on a dim colour, nothing else. */
     static SaverCore plain(Random rnd, int saverMax, boolean gravityMode, int level,
                            float screenW, float screenH, float boxW, float boxH) {
-        SaverCore c = new SaverCore(rnd, saverMax, gravityMode, level, screenW, screenH, 0, null, 0f, 0f);
+        return plain(rnd, saverMax, gravityMode, false, level, screenW, screenH, boxW, boxH);
+    }
+
+    /** As above; with breathe (and gravity) the background follows the clock's height. */
+    static SaverCore plain(Random rnd, int saverMax, boolean gravityMode, boolean breathe, int level,
+                           float screenW, float screenH, float boxW, float boxH) {
+        SaverCore c = new SaverCore(rnd, saverMax, gravityMode, breathe, level, screenW, screenH, 0, null, 0f, 0f);
         c.phase = Phase.SAVER;
         c.grow = 1f;
-        c.bgColor = c.drift.color();
         c.sim.reset(screenW, screenH, boxW, boxH, gravityMode, level);
+        c.bgColor = c.saverBackground();
         return c;
     }
 
@@ -71,7 +108,15 @@ final class SaverCore {
     static SaverCore fromHome(Random rnd, int saverMax, boolean gravityMode, int level,
                               float screenW, float screenH, int homeColor, Debris debris,
                               float clockX, float clockY, float boxW, float boxH) {
-        SaverCore c = new SaverCore(rnd, saverMax, gravityMode, level, screenW, screenH,
+        return fromHome(rnd, saverMax, gravityMode, false, level, screenW, screenH, homeColor, debris,
+                clockX, clockY, boxW, boxH);
+    }
+
+    /** As above; with breathe (and gravity) the background follows the clock's height. */
+    static SaverCore fromHome(Random rnd, int saverMax, boolean gravityMode, boolean breathe, int level,
+                              float screenW, float screenH, int homeColor, Debris debris,
+                              float clockX, float clockY, float boxW, float boxH) {
+        SaverCore c = new SaverCore(rnd, saverMax, gravityMode, breathe, level, screenW, screenH,
                 homeColor, debris, clockX, clockY);
         c.phase = Phase.FALL;
         c.grow = 0f;
@@ -97,9 +142,10 @@ final class SaverCore {
                 for (float left = dt; left > 0f; left -= SUB) {
                     float s = Math.min(left, SUB);
                     sim.step(s);
+                    if (breathe && sim.floorBounced()) newPeaks();   // the background is black at the landing
                     debris.step(s);
                 }
-                bgColor = blend(homeColor, drift.color(), smooth(Math.min(1f, tPhase / Config.FALL_FADE_S)));
+                bgColor = blend(homeColor, saverBackground(), smooth(Math.min(1f, tPhase / Config.FALL_FADE_S)));
                 if (debris.allGone() && tPhase >= Config.FALL_FADE_S && grow >= 1f) {
                     phase = Phase.SAVER;
                     tPhase = 0f;
@@ -109,12 +155,15 @@ final class SaverCore {
 
             case SAVER:
                 sim.setBox(boxW, boxH);
-                for (float left = dt; left > 0f; left -= SUB) sim.step(Math.min(left, SUB));
+                for (float left = dt; left > 0f; left -= SUB) {
+                    sim.step(Math.min(left, SUB));
+                    if (breathe && sim.floorBounced()) newPeaks();
+                }
                 msCarry += dt * 1000f;
                 long whole = (long) msCarry;
                 msCarry -= whole;
                 if (whole > 0) drift.advance(whole, false, 0, 0);
-                bgColor = drift.color();
+                bgColor = saverBackground();
                 break;
 
             case RETURN:
@@ -173,6 +222,8 @@ final class SaverCore {
 
     // for tests
     int saverColor() { return drift.color(); }
+    boolean breathing() { return breathe; }
+    int peak(int channel) { return peak[channel]; }
     BounceSim sim() { return sim; }
 
     private boolean onWayHome() { return phase == Phase.RETURN || phase == Phase.DONE; }

@@ -116,9 +116,9 @@ final class Tunables {
             1, 20, 0.5f, 1, 1, "x ", "",
             () -> Config.GRAVITY_SCALE[2], v -> Config.GRAVITY_SCALE[2] = v));
     static final Item ENERGY_MIN = add(new Item(SAVER, "energy_min", "Bounce energy, lowest (speed at the top of each arc)",
-            0.000f, 0.1f, 0.01f, 1, 3, "", "", () -> Config.ENERGY_MIN, v -> Config.ENERGY_MIN = v));
+            0.005f, 0.1f, 0.005f, 1, 3, "", "", () -> Config.ENERGY_MIN, v -> Config.ENERGY_MIN = v));
     static final Item ENERGY_MAX = add(new Item(SAVER, "energy_max", "Bounce energy, highest",
-            0.000f, 0.2f, 0.01f, 1, 3, "", "", () -> Config.ENERGY_MAX, v -> Config.ENERGY_MAX = v));
+            0.005f, 0.2f, 0.005f, 1, 3, "", "", () -> Config.ENERGY_MAX, v -> Config.ENERGY_MAX = v));
     static final Item VX_MIN = add(new Item(SAVER, "vx_min", "Sideways speed, slowest (screen widths per second)",
             0.01f, 0.4f, 0.01f, 100, 0, "", " %", () -> Config.VX_MIN, v -> Config.VX_MIN = v));
     static final Item VX_MAX = add(new Item(SAVER, "vx_max", "Sideways speed, fastest",

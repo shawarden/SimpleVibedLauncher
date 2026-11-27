@@ -17,6 +17,11 @@ as the screen allows, with short rows and the whole block centred (it scrolls if
 * Screensaver clock moves: with gravity (speeds up falling, slows rising) or a clean bounce (constant speed, straight lines).
 * Gravity strength / speed: low (the original), medium or high. In gravity mode it sets how strong the gravity is; with the
   clean bounce it sets how fast the clock moves. Faster movement means more edge bounces, so the colour changes more often.
+* Gravity mode background: "Colour steps on bounce" (the original: the colour changes a step each time the clock hits
+  an edge) or "Breathes with the clock". Breathing: the background is black (000000) when the clock is on the bottom
+  edge and brightens as it rises, reaching its peak colour at the top of the arc, then dims again as it falls. Each
+  of R, G and B has its own peak, picked at random between 0 and the screensaver brightness limit, and a new set of
+  peaks is picked at every landing (the screen is black then, so you don't see the change). Only used with gravity.
 * Screensaver clock shows: time and date, or time only.
 * Screensaver brightness (32/64/96/128) and background brightness (16/32/48/64).
 * Advanced settings: a slider for each adjustable number (see below).

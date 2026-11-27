@@ -23,6 +23,7 @@ final class BounceSim {
     private float fieldW, fieldH, maxX, maxY;
     private final Random rnd;
     private final Listener listener;
+    private boolean floorHit;        // set when the box lands on the bottom edge; see floorBounced()
 
     BounceSim(Random rnd, Listener listener) {
         this.rnd = rnd;
@@ -98,7 +99,7 @@ final class BounceSim {
         y += vy * dt + 0.5f * g * dt * dt;
         vy += g * dt;
         if (y < 0f) { y = -y; vy = -vy; hit = true; }
-        else if (y > maxY) { y = 2f * maxY - y; vy = -vy; hit = true; }
+        else if (y > maxY) { y = 2f * maxY - y; vy = -vy; hit = true; floorHit = true; }
 
         if (g > 0f) {
             // Re-derive the speed from the conserved energy so rounding errors never add up.
@@ -107,6 +108,13 @@ final class BounceSim {
         }
 
         if (hit) listener.onBounce();
+    }
+
+    /** True once if the box has landed on the bottom edge since this was last asked. */
+    boolean floorBounced() {
+        boolean f = floorHit;
+        floorHit = false;
+        return f;
     }
 
     private float sign() { return rnd.nextBoolean() ? 1f : -1f; }

@@ -31,8 +31,8 @@ public class SettingsActivity extends Activity {
         int w = dm.widthPixels;
         h = dm.heightPixels;
         int margin = (int) (w * 0.05f);
-        int gap = (int) (h * 0.014f);
-        rowH = (int) (h * 0.07f);
+        int gap = (int) (h * 0.012f);
+        rowH = (int) (h * 0.064f);
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(0xFF000000);
@@ -79,6 +79,9 @@ public class SettingsActivity extends Activity {
         addRow(column, gap, "Gravity strength / speed", Prefs.MOTION_LEVEL, 0, false,
                 new String[] { "Low  (default)", "Medium", "High" },
                 new long[] { 0, 1, 2 });
+        addRow(column, gap, "Gravity mode background", Prefs.BREATHE, 0, false,
+                new String[] { "Colour steps on bounce", "Breathes with the clock" },
+                new long[] { 0, 1 });
         addRow(column, gap, "Screensaver clock shows", Prefs.SAVER_DATE, 1, false,
                 new String[] { "Time and date", "Time only" },
                 new long[] { 1, 0 });

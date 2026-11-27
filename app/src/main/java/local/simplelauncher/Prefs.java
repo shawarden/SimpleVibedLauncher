@@ -16,6 +16,8 @@ final class Prefs {
     static final String MOTION = "motion";
     /** 0 = low, 1 = medium, 2 = high: gravity strength in gravity mode, movement speed in clean mode. */
     static final String MOTION_LEVEL = "motion_level";
+    /** 1 = in gravity mode the background breathes with the clock's height; 0 = colour steps on each bounce. */
+    static final String BREATHE = "breathe";
     /** 1 = time and date, 0 = time only. */
     static final String SAVER_DATE = "saver_date";
     private static final String ASKED_LOCATION = "asked_location";
@@ -50,6 +52,10 @@ final class Prefs {
 
     static int motionLevel(Context c) {
         return (int) Math.max(0, Math.min(2, sp(c).getLong(MOTION_LEVEL, 0)));
+    }
+
+    static boolean breathe(Context c) {
+        return sp(c).getLong(BREATHE, 0) != 0;
     }
 
     static boolean saverShowsDate(Context c) {
