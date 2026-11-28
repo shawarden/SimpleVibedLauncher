@@ -42,8 +42,22 @@ The system daydream (if your TV lets you choose one) uses the plain screensaver 
 ## Button mapper
 
 Launcher settings > Button mapper. It lists the buttons you have set up. **+ Add a button** asks you to press a button
-on the remote and then what it should do. OK on a listed button gives: change what it does, add/change/clear an alias
-(shown instead of the button's own name), test it now, remove it. Back, Home, the arrows and OK can't be remapped.
+on the remote and then what its single press should do; the button's menu then opens so you can also give it a long press
+and a double press. OK on a listed button gives the three presses (choose one to set it, or to change, test or clear it),
+add/change/clear an alias (shown instead of the button's own name), and remove the button. Back, Home, the arrows and OK
+can't be remapped.
+
+**Single, long and double press.** Each button can do up to three different things:
+* *Single press* - a quick press. If the button has no long or double press, this happens the instant it is pressed (and
+  volume and channel buttons keep repeating while held). With a long press set, it happens when you let go; with a double
+  press set, it happens once the double-press time has passed with no second press, so it feels a little slower.
+* *Long press* - hold the button; it happens as soon as the long-press time is reached, without waiting for you to let go.
+* *Double press* - press twice quickly; it happens on the second press.
+
+The two times (default 0.50 s and 0.30 s) are in Advanced settings under "Button mapper". A press that has nothing set
+does nothing, but a button with any press set is still taken over completely; set the unused press to "Nothing" or to the
+action you want. Clearing every press of a button hands it back to Android. Buttons set up with the earlier version keep
+working as their single press.
 
 A button can be set to:
 * **Media controls:** play/pause, play, pause, stop, next, previous, rewind, fast forward (sent to whatever is playing).
@@ -51,7 +65,9 @@ A button can be set to:
 * **Channels and TV functions:** channel up/down, input select, HDMI 1-4, audio, subtitles, info, options, help, the four
   colour buttons, standby. These are sent to the TV itself (see IP control below).
 * **Android TV functions:** Home, Back, Recent apps, Notifications, Quick settings, Power menu, Screenshot, voice
-  assistant, and the D-pad (the D-pad ones only on Android 13 or newer).
+  assistant, **App info** (the App info page of the app that is in front) and the D-pad (the D-pad ones only on Android
+  13 or newer). App info works from the last app window the service noticed coming to the front, so it can be wrong right
+  after a pop-up or overlay; it says so if it has not seen any app yet.
 * **System shortcuts:** TV settings, network, Bluetooth, display, sound, apps, accessibility, keyboard, date and time,
   language, storage, developer options.
 * **This launcher:** home screen, apps drawer, inputs list, network info, launcher settings, button mapper, start the

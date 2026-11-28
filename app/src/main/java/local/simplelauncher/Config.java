@@ -64,6 +64,12 @@ final class Config {
     /** Each piece lets go after a random delay of up to this many seconds. */
     static float RELEASE_DELAY_MAX_S = 0.5f;
 
+    // ---- Button mapper
+    /** Holding a button this long counts as a long press. */
+    static long LONG_PRESS_MS = 500;
+    /** A second press within this time of the first counts as a double press. */
+    static long DOUBLE_PRESS_MS = 300;
+
     // ---- Layout
     static int FAV_COLUMNS = 4;
     static int DRAWER_COLUMNS = 6;

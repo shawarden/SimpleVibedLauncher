@@ -75,6 +75,7 @@ final class ActionCatalog {
             i("global:POWER_DIALOG", "Power menu"),
             i("global:SCREENSHOT", "Screenshot"),
             i("assist:VOICE", "Voice assistant"),
+            i("global:APP_INFO", "App info for the app in front"),
             i("global:DPAD_UP", "D-pad up (Android 13 and newer)"),
             i("global:DPAD_DOWN", "D-pad down (Android 13 and newer)"),
             i("global:DPAD_LEFT", "D-pad left (Android 13 and newer)"),

@@ -85,6 +85,15 @@ final class ActionRunner {
         }
         int action;
         switch (name) {
+            case "APP_INFO": {
+                String pkg = KeyService.currentPackage();
+                if (pkg == null) {
+                    toast(app, "No app has been seen in front yet; open one first");
+                } else {
+                    Actions.appInfo(app, pkg);
+                }
+                return;
+            }
             case "HOME":           action = AccessibilityService.GLOBAL_ACTION_HOME; break;
             case "BACK":           action = AccessibilityService.GLOBAL_ACTION_BACK; break;
             case "RECENTS":        action = AccessibilityService.GLOBAL_ACTION_RECENTS; break;

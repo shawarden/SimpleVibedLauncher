@@ -10,27 +10,61 @@ import java.util.List;
  * No Android classes in here, so it can be tested on a plain JVM.
  */
 final class Bindings {
+    /** Which press of the button an action belongs to. */
+    static final int SINGLE = 0, LONG = 1, DOUBLE = 2;
+    static final String[] PRESS_NAMES = { "Single press", "Long press", "Double press" };
+    private static final String[] SHORT_NAMES = { "Press", "Long", "Double" };
+
     static final class Binding {
         final String keyId;       // "k<keyCode>", or "s<scanCode>" for a button Android has no key code for
         final int keyCode;
         final int scanCode;
         String keyName;           // e.g. "PROG RED", as shown to the user
         String alias;             // "" when there is none
-        String action;            // see ActionCatalog
-        String actionLabel;       // what to show for the action (kept so apps need no lookup)
+        /** What each press does, indexed by SINGLE, LONG, DOUBLE. An empty action means that press is not set. */
+        final String[] action = { "", "", "" };
+        /** What to show for each action (kept so apps need no lookup). */
+        final String[] actionLabel = { "", "", "" };
 
-        Binding(int keyCode, int scanCode, String keyName, String alias, String action, String actionLabel) {
+        Binding(int keyCode, int scanCode, String keyName, String alias) {
             this.keyCode = keyCode;
             this.scanCode = scanCode;
             this.keyId = keyId(keyCode, scanCode);
             this.keyName = keyName;
             this.alias = alias == null ? "" : alias;
-            this.action = action;
-            this.actionLabel = actionLabel;
+        }
+
+        /** A button with just a single press. */
+        Binding(int keyCode, int scanCode, String keyName, String alias, String action, String actionLabel) {
+            this(keyCode, scanCode, keyName, alias);
+            set(SINGLE, action, actionLabel);
         }
 
         /** The name to show: the alias if there is one, otherwise the button's own name. */
         String title() { return alias.isEmpty() ? keyName : alias; }
+
+        boolean has(int press) { return !action[press].isEmpty(); }
+
+        void set(int press, String spec, String label) {
+            action[press] = spec == null ? "" : spec;
+            actionLabel[press] = spec == null ? "" : (label == null ? "" : label);
+        }
+
+        void clear(int press) { set(press, "", ""); }
+
+        /** True when no press has an action. */
+        boolean isEmpty() { return !has(SINGLE) && !has(LONG) && !has(DOUBLE); }
+
+        /** For example "Press: Play / Pause     Long: Mute". */
+        String summary() {
+            StringBuilder sb = new StringBuilder();
+            for (int p = 0; p < 3; p++) {
+                if (!has(p)) continue;
+                if (sb.length() > 0) sb.append("     ");
+                sb.append(SHORT_NAMES[p]).append(": ").append(actionLabel[p]);
+            }
+            return sb.toString();
+        }
     }
 
     private final List<Binding> list = new ArrayList<>();
@@ -94,27 +128,39 @@ final class Bindings {
 
     // ---------------------------------------------------------------- saving
 
-    /** One line per binding, fields separated by tabs; tabs, newlines and backslashes inside fields are escaped. */
+    /**
+     * One line per binding, fields separated by tabs (tabs, newlines and backslashes inside fields are escaped):
+     * key code, scan code, key name, alias, then the action and label of the single, long and double press.
+     */
     String serialize() {
         StringBuilder sb = new StringBuilder();
         for (Binding b : list) {
             sb.append(b.keyCode).append('\t').append(b.scanCode).append('\t')
-                    .append(esc(b.keyName)).append('\t').append(esc(b.alias)).append('\t')
-                    .append(esc(b.action)).append('\t').append(esc(b.actionLabel)).append('\n');
+                    .append(esc(b.keyName)).append('\t').append(esc(b.alias));
+            for (int p = 0; p < 3; p++) {
+                sb.append('\t').append(esc(b.action[p])).append('\t').append(esc(b.actionLabel[p]));
+            }
+            sb.append('\n');
         }
         return sb.toString();
     }
 
+    /** Reads what {@link #serialize} wrote, and also the older lines that had only one action per button. */
     static Bindings parse(String text) {
         Bindings out = new Bindings();
         if (text == null) return out;
         for (String line : text.split("\n")) {
             if (line.isEmpty()) continue;
             String[] f = line.split("\t", -1);
-            if (f.length != 6) continue;                 // damaged line: skip it
+            if (f.length != 6 && f.length != 10) continue;          // damaged line: skip it
             try {
-                out.put(new Binding(Integer.parseInt(f[0]), Integer.parseInt(f[1]),
-                        unesc(f[2]), unesc(f[3]), unesc(f[4]), unesc(f[5])));
+                Binding b = new Binding(Integer.parseInt(f[0]), Integer.parseInt(f[1]), unesc(f[2]), unesc(f[3]));
+                if (f.length == 6) {
+                    b.set(SINGLE, unesc(f[4]), unesc(f[5]));
+                } else {
+                    for (int p = 0; p < 3; p++) b.set(p, unesc(f[4 + 2 * p]), unesc(f[5 + 2 * p]));
+                }
+                out.put(b);
             } catch (NumberFormatException e) {
                 // skip
             }

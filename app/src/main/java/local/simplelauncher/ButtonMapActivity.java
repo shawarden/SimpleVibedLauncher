@@ -137,8 +137,9 @@ public class ButtonMapActivity extends Activity {
 
         for (Bindings.Binding b : Mappings.get(this).all()) {
             final Bindings.Binding binding = b;
-            String sub = binding.alias.isEmpty() ? null : "Button: " + binding.keyName;
-            View row = addRow(binding.title(), sub, binding.actionLabel, 0xFFFFD54F, v -> editMenu(binding));
+            String jobs = binding.summary();
+            String sub = binding.alias.isEmpty() ? jobs : "Button: " + binding.keyName + "     " + jobs;
+            View row = addRow(binding.title(), sub, "", 0xFFFFD54F, v -> editMenu(binding));
             if (binding.keyId.equals(focusKeyId)) focus = row;
         }
         focusKeyId = null;
@@ -257,9 +258,12 @@ public class ButtonMapActivity extends Activity {
             editMenu(existing);
             return;
         }
-        final Bindings.Binding fresh = new Bindings.Binding(keyCode, scanCode, keyName(keyCode, scanCode),
-                "", ActionCatalog.NONE, ActionCatalog.NONE_LABEL);
-        pickAction("Set \"" + fresh.keyName + "\" to", (spec, label) -> commit(fresh, spec, label));
+        final Bindings.Binding fresh = new Bindings.Binding(keyCode, scanCode, keyName(keyCode, scanCode), "");
+        // The first job is the single press; the menu then opens so long and double presses can be added.
+        pickAction("Set \"" + fresh.keyName + "\" (single press) to", (spec, label) -> {
+            commit(fresh, Bindings.SINGLE, spec, label);
+            editMenu(fresh);
+        });
     }
 
     private static String keyName(int keyCode, int scanCode) {
@@ -270,9 +274,8 @@ public class ButtonMapActivity extends Activity {
         return n.replace('_', ' ');
     }
 
-    private void commit(Bindings.Binding b, String spec, String label) {
-        b.action = spec;
-        b.actionLabel = label;
+    private void commit(Bindings.Binding b, int press, String spec, String label) {
+        b.set(press, spec, label);
         Mappings.get(this).put(b);
         Mappings.save(this);
         focusKeyId = b.keyId;
@@ -285,20 +288,60 @@ public class ButtonMapActivity extends Activity {
 
     // ---------------------------------------------------------------- editing a button
 
+    private static final String[] PRESS_TITLES = { "Single press", "Long press", "Double press" };
+
     private void editMenu(final Bindings.Binding b) {
-        String[] items = { "Change what it does", b.alias.isEmpty() ? "Add an alias" : "Change or clear the alias",
-                "Test it now", "Remove this button" };
-        dialog = Menus.show(this, b.title() + "   >   " + b.actionLabel, items, which -> {
-            if (which == 0) {
-                pickAction("Set \"" + b.title() + "\" to", (spec, label) -> commit(b, spec, label));
-            } else if (which == 1) {
+        String[] items = new String[5];
+        for (int p = 0; p < 3; p++) {
+            items[p] = PRESS_TITLES[p] + ":   " + (b.has(p) ? b.actionLabel[p] : "not set");
+        }
+        items[3] = b.alias.isEmpty() ? "Add an alias" : "Change or clear the alias";
+        items[4] = "Remove this button";
+        dialog = Menus.show(this, b.title(), items, which -> {
+            if (which < 3) {
+                pressMenu(b, which);
+            } else if (which == 3) {
                 editAlias(b);
-            } else if (which == 2) {
-                ActionRunner.run(this, b.action);
             } else {
                 Mappings.get(this).remove(b.keyId);
                 Mappings.save(this);
                 rebuild();
+            }
+        });
+    }
+
+    /** One of a button's three presses: choose what it does, or (if it already does something) change, test or clear it. */
+    private void pressMenu(final Bindings.Binding b, final int press) {
+        final String title = b.title() + "  >  " + PRESS_TITLES[press].toLowerCase(java.util.Locale.ROOT);
+        if (!b.has(press)) {
+            pickAction("Set \"" + title + "\" to", (spec, label) -> {
+                commit(b, press, spec, label);
+                editMenu(b);
+            });
+            return;
+        }
+        String[] items = { "Change what it does", "Test it now", "Clear this press", "Back" };
+        dialog = Menus.show(this, title + ":  " + b.actionLabel[press], items, which -> {
+            if (which == 0) {
+                pickAction("Set \"" + title + "\" to", (spec, label) -> {
+                    commit(b, press, spec, label);
+                    editMenu(b);
+                });
+            } else if (which == 1) {
+                ActionRunner.run(this, b.action[press]);
+            } else if (which == 2) {
+                b.clear(press);
+                if (b.isEmpty()) {
+                    Mappings.get(this).remove(b.keyId);     // nothing left: the button goes back to normal
+                } else {
+                    Mappings.get(this).put(b);
+                }
+                Mappings.save(this);
+                focusKeyId = b.keyId;
+                rebuild();
+                if (!b.isEmpty()) editMenu(b);
+            } else {
+                editMenu(b);
             }
         });
     }

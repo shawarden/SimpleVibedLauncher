@@ -84,6 +84,7 @@ final class Tunables {
     private static final String SAVER = "Screensaver";
     private static final String GOING_IN = "Going into the screensaver";
     private static final String COMING_BACK = "Coming back to the home screen";
+    private static final String BUTTONS = "Button mapper";
     private static final String LAYOUT = "Layout";
 
     private static final List<Item> ITEMS = new ArrayList<>();
@@ -153,6 +154,14 @@ final class Tunables {
             0.5f, 10, 0.5f, 1, 1, "", " s", () -> Config.RETURN_MAX_S, v -> Config.RETURN_MAX_S = v));
     static final Item RETURN_SHRINK = add(new Item(COMING_BACK, "return_shrink", "Clock shrinking to home size",
             0.1f, 5, 0.1f, 1, 1, "", " s", () -> Config.RETURN_SHRINK_S, v -> Config.RETURN_SHRINK_S = v));
+
+    // ---- Button mapper
+    static final Item LONG_PRESS = add(new Item(BUTTONS, "long_press", "Long press: how long to hold the button",
+            0.3f, 2, 0.05f, 1, 2, "", " s",
+            () -> Config.LONG_PRESS_MS / 1000f, v -> Config.LONG_PRESS_MS = Math.round(v * 1000f)));
+    static final Item DOUBLE_PRESS = add(new Item(BUTTONS, "double_press", "Double press: time allowed between the two presses",
+            0.15f, 0.8f, 0.05f, 1, 2, "", " s",
+            () -> Config.DOUBLE_PRESS_MS / 1000f, v -> Config.DOUBLE_PRESS_MS = Math.round(v * 1000f)));
 
     // ---- Layout
     static final Item FAV_COLUMNS = add(new Item(LAYOUT, "fav_columns", "Favourites per row",
